@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مرّ من الوقت</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', sans-serif;
+  background: #000;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.7;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Rain */
+.rain-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+.raindrop {
+  position: absolute; top: -10%; width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(150,180,255,0.3), transparent);
+  animation: rain-fall linear infinite;
+}
+@keyframes rain-fall {
+  0% { transform: translateY(-10vh) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(110vh) translateX(-20px); opacity: 0; }
+}
+
+/* Fog */
+.fog-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+}
+
+/* BG image */
+.bg-image {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; opacity: 0.06; background-size: cover; background-position: center;
+  filter: grayscale(80%) blur(1px); transition: opacity 5s;
+}
+
+/* Main container */
+.app-container { position: relative; z-index: 10; min-height: 100vh; }
+
+/* Top bar */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+}
+.top-bar button {
+  background: rgba(24,24,27,0.5); border: 1px solid rgba(39,39,42,0.3);
+  color: #71717a; border-radius: 8px; padding: 8px; cursor: pointer;
+  transition: all 0.3s; font-size: 14px;
+}
+.top-bar button:hover { color: #d4d4d8; background: rgba(24,24,27,0.7); }
+.volume-slider { width: 60px; height: 4px; -webkit-appearance: none; background: #27272a; border-radius: 4px; outline: none; margin-right: 8px; }
+.volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #a1a1aa; cursor: pointer; }
+
+/* Timer */
+.timer-section { padding: 60px 16px 16px; text-align: center; }
+.timer-title { color: #a1a1aa; font-size: 18px; margin-bottom: 4px; }
+.timer-subtitle { color: #52525b; font-size: 12px; margin-bottom: 16px; }
+.timer-boxes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.timer-box { display: flex; flex-direction: column; align-items: center; }
+.timer-value {
+  width: 56px; height: 64px; background: rgba(0,0,0,0.6);
+  border: 1px solid #27272a; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace;
+  position: relative; overflow: hidden;
+}
+.timer-value::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(to bottom, rgba(39,39,42,0.2), transparent);
+}
+.timer-value span { position: relative; z-index: 1; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+.timer-label { font-size: 10px; color: #71717a; margin-top: 4px; }
+.stats-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.stat-item { display: flex; flex-direction: column; align-items: center; }
+.stat-value { font-size: 14px; font-family: 'Courier New', monospace; color: #d4d4d8; }
+.stat-label { font-size: 9px; color: #52525b; }
+
+/* Action buttons */
+.action-buttons { padding: 16px; max-width: 420px; margin: 0 auto; }
+.action-btn {
+  width: 100%; border: none; border-radius: 16px; padding: 20px;
+  display: flex; align-items: center; gap: 16px; cursor: pointer;
+  transition: all 0.3s; margin-bottom: 16px; text-align: right;
+}
+.action-btn:active { transform: scale(0.98); }
+.action-btn .icon-box {
+  width: 56px; height: 56px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.action-btn .text-content { flex: 1; }
+.action-btn .btn-title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+.action-btn .btn-desc { font-size: 11px; opacity: 0.6; }
+.action-btn .arrow { font-size: 24px; opacity: 0.3; flex-shrink: 0; }
+
+.btn-encourage {
+  background: linear-gradient(to left, rgba(6,78,59,0.4), rgba(2,44,34,0.6));
+  border: 1px solid rgba(6,95,70,0.3);
+}
+.btn-encourage .icon-box { background: rgba(6,78,59,0.5); border: 1px solid rgba(4,120,87,0.3); }
+.btn-encourage .btn-title { color: #6ee7b7; text-shadow: 0 0 10px rgba(16,185,129,0.4); }
+.btn-encourage:hover { box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+
+.btn-sad {
+  background: linear-gradient(to left, rgba(30,58,138,0.4), rgba(23,37,84,0.6));
+  border: 1px solid rgba(30,64,175,0.3);
+}
+.btn-sad .icon-box { background: rgba(30,58,138,0.5); border: 1px solid rgba(37,99,235,0.3); }
+.btn-sad .btn-title { color: #93c5fd; text-shadow: 0 0 10px rgba(59,130,246,0.4); }
+.btn-sad:hover { box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+
+.btn-endtime {
+  background: linear-gradient(to left, rgba(127,29,29,0.4), rgba(69,10,10,0.6));
+  border: 1px solid rgba(153,27,27,0.3);
+}
+.btn-endtime .icon-box { background: rgba(127,29,29,0.5); border: 1px solid rgba(220,38,38,0.3); }
+.btn-endtime .btn-title { color: #fca5a5; text-shadow: 0 0 10px rgba(239,68,68,0.4); }
+.btn-endtime:hover { box-shadow: 0 0 20px rgba(239,68,68,0.3); }
+
+/* Quick action buttons */
+.quick-actions { display: flex; gap: 12px; max-width: 420px; margin: 0 auto; padding: 0 16px; }
+.quick-btn {
+  flex: 1; background: rgba(24,24,27,0.4); border: 1px solid rgba(39,39,42,0.3);
+  border-radius: 12px; padding: 12px; color: #a1a1aa; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 13px; transition: all 0.3s;
+}
+.quick-btn:hover { color: #e4e4e7; background: rgba(24,24,27,0.6); }
+
+/* Footer */
+.footer { padding: 16px; text-align: center; margin-top: 32px; }
+.footer p { color: #27272a; font-size: 10px; }
+
+/* ===== FULL SCREEN PANELS ===== */
+.panel {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 50; background: #000; display: flex; flex-direction: column;
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.panel-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid rgba(39,39,42,0.5);
+}
+.panel-header .back-btn {
+  color: #a1a1aa; background: none; border: none; font-size: 18px;
+  cursor: pointer; padding: 4px;
+}
+.panel-header .close-btn {
+  color: #71717a; background: none; border: none; font-size: 18px;
+  cursor: pointer; margin-right: auto;
+}
+.panel-header h2 { font-size: 16px; }
+.panel-header .subtitle { font-size: 11px; color: #71717a; }
+
+/* Chat */
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; }
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
+
+.msg-bubble { max-width: 80%; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; animation: slideUp 0.3s ease-out; }
+.msg-user { margin-right: auto; }
+.msg-ai { margin-left: auto; }
+.msg-bubble p { font-size: 13px; white-space: pre-wrap; }
+.msg-bubble .msg-time { font-size: 9px; color: #52525b; margin-top: 4px; display: block; }
+
+.msg-user-encourage { background: rgba(6,78,59,0.4); border: 1px solid rgba(6,95,70,0.3); }
+.msg-ai-default { background: rgba(24,24,27,0.6); border: 1px solid rgba(39,39,42,0.5); }
+.msg-user-sad { background: rgba(30,58,138,0.4); border: 1px solid rgba(30,64,175,0.3); }
+.msg-user-endtime { background: rgba(127,29,29,0.4); border: 1px solid rgba(153,27,27,0.3); }
+
+.typing-indicator { display: flex; gap: 4px; align-items: center; padding: 8px 0; margin-left: auto; }
+.typing-dot {
+  width: 8px; height: 8px; background: #71717a; border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+.chat-input-area {
+  border-top: 1px solid rgba(39,39,42,0.5); padding: 12px;
+  background: rgba(0,0,0,0.8);
+}
+.chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+.chat-input-row textarea {
+  flex: 1; background: rgba(24,24,27,0.8); border: 1px solid #27272a;
+  border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px;
+  resize: none; font-family: inherit; min-height: 44px; max-height: 128px;
+  outline: none; direction: rtl;
+}
+.chat-input-row textarea:focus { border-color: #52525b; }
+.chat-input-row textarea::placeholder { color: #52525b; }
+.send-btn {
+  min-width: 44px; min-height: 44px; border: none; border-radius: 12px;
+  color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all 0.3s;
+}
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.send-btn-encourage { background: #059669; }
+.send-btn-encourage:hover:not(:disabled) { background: #047857; }
+.send-btn-sad { background: #2563eb; }
+.send-btn-sad:hover:not(:disabled) { background: #1d4ed8; }
+.send-btn-endtime { background: #dc2626; }
+.send-btn-endtime:hover:not(:disabled) { background: #b91c1c; }
+
+/* Notes */
+.note-input-area { padding: 16px; border-bottom: 1px solid rgba(39,39,42,0.3); }
+.note-input-row { display: flex; gap: 8px; }
+.note-input-row textarea {
+  flex: 1; background: rgba(24,24,27,0.8); border: 1px solid #27272a;
+  border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px;
+  resize: none; font-family: inherit; min-height: 44px; outline: none; direction: rtl;
+}
+.note-input-row textarea:focus { border-color: #52525b; }
+.add-btn {
+  min-width: 44px; min-height: 44px; background: #27272a; border: none;
+  border-radius: 12px; color: #fff; cursor: pointer; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; align-self: flex-end;
+}
+.add-btn:hover { background: #3f3f46; }
+
+.notes-list { flex: 1; overflow-y: auto; padding: 16px; }
+.notes-list::-webkit-scrollbar { width: 4px; }
+.notes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
+
+.note-card {
+  background: rgba(24,24,27,0.6); border: 1px solid rgba(39,39,42,0.5);
+  border-radius: 12px; padding: 16px; margin-bottom: 12px; position: relative;
+}
+.note-card:hover .note-delete { opacity: 1; }
+.note-card p { font-size: 13px; color: #e4e4e7; white-space: pre-wrap; }
+.note-card .note-date { font-size: 9px; color: #3f3f46; margin-top: 8px; display: block; }
+.note-delete {
+  position: absolute; top: 8px; left: 8px; background: none; border: none;
+  color: #3f3f46; cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 0.3s;
+}
+.note-delete:hover { color: #f87171; }
+
+/* Missions */
+.mission-progress { padding: 12px 16px; }
+.progress-bar-bg { width: 100%; background: #18181b; border-radius: 999px; height: 8px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(to left, #10b981, #047857); border-radius: 999px; transition: width 0.5s; }
+.progress-complete { color: #34d399; font-size: 12px; text-align: center; margin-top: 8px; }
+
+.mission-input-area { padding: 16px; border-bottom: 1px solid rgba(39,39,42,0.3); }
+.mission-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.mission-input-row input {
+  flex: 1; background: rgba(24,24,27,0.8); border: 1px solid #27272a;
+  border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px;
+  font-family: inherit; min-height: 44px; outline: none; direction: rtl;
+}
+.mission-input-row input:focus { border-color: #52525b; }
+.generate-btn {
+  width: 100%; background: rgba(6,78,59,0.3); border: 1px solid rgba(6,95,70,0.3);
+  border-radius: 12px; padding: 10px 16px; color: #6ee7b7; font-size: 13px;
+  cursor: pointer; transition: all 0.3s; font-family: inherit;
+}
+.generate-btn:hover { background: rgba(6,78,59,0.5); }
+.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.missions-list { flex: 1; overflow-y: auto; padding: 16px; }
+.missions-list::-webkit-scrollbar { width: 4px; }
+.missions-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
+
+.mission-card {
+  border-radius: 12px; padding: 12px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid rgba(39,39,42,0.5); background: rgba(24,24,27,0.6);
+  transition: all 0.3s;
+}
+.mission-card.completed { background: rgba(6,78,59,0.1); border-color: rgba(6,95,70,0.2); }
+.mission-check {
+  width: 24px; height: 24px; border-radius: 8px; border: 2px solid #3f3f46;
+  background: none; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; color: transparent; font-size: 12px;
+  transition: all 0.3s;
+}
+.mission-check.checked { background: #059669; border-color: #10b981; color: #fff; }
+.mission-card .mission-text { flex: 1; font-size: 13px; }
+.mission-card.completed .mission-text { color: #71717a; text-decoration: line-through; }
+.mission-card .mission-delete {
+  background: none; border: none; color: #3f3f46; cursor: pointer;
+  font-size: 14px; opacity: 0; transition: opacity 0.3s;
+}
+.mission-card:hover .mission-delete { opacity: 1; }
+.mission-card .mission-delete:hover { color: #f87171; }
+
+/* Settings */
+.settings-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
+  padding: 16px; animation: fadeIn 0.3s ease-out;
+}
+.settings-card {
+  background: #09090b; border: 1px solid #27272a; border-radius: 16px;
+  width: 100%; max-width: 420px; overflow: hidden;
+}
+.settings-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border-bottom: 1px solid rgba(39,39,42,0.5);
+}
+.settings-header h2 { font-size: 16px; }
+.settings-close { background: none; border: none; color: #71717a; cursor: pointer; font-size: 18px; }
+.settings-body { padding: 16px; }
+.settings-item {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 12px; background: rgba(24,24,27,0.6); border: 1px solid rgba(39,39,42,0.5);
+  border-radius: 12px; color: #d4d4d8; font-size: 13px; cursor: pointer;
+  font-family: inherit; margin-bottom: 8px; transition: all 0.3s;
+}
+.settings-item:hover { background: rgba(39,39,42,0.5); }
+.settings-item.danger { background: rgba(127,29,29,0.2); border-color: rgba(153,27,27,0.3); color: #f87171; }
+.settings-item.danger:hover { background: rgba(127,29,29,0.4); }
+.volume-range {
+  width: 100%; height: 8px; -webkit-appearance: none; background: #27272a;
+  border-radius: 8px; outline: none; margin-top: 8px;
+}
+.volume-range::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #a1a1aa; cursor: pointer; }
+.settings-info { text-align: center; padding-top: 16px; border-top: 1px solid rgba(39,39,42,0.3); margin-top: 8px; }
+.settings-info p { color: #52525b; font-size: 11px; }
+
+/* Reminders */
+.reminder-card {
+  background: rgba(24,24,27,0.6); border: 1px solid rgba(39,39,42,0.5);
+  border-radius: 12px; padding: 12px; margin-bottom: 8px;
+}
+.reminder-card .reminder-title { font-size: 13px; font-weight: bold; color: #e4e4e7; }
+.reminder-card .reminder-text { font-size: 12px; color: #a1a1aa; margin-top: 4px; line-height: 1.6; }
+
+.ai-reminder-card {
+  background: linear-gradient(to bottom right, rgba(127,29,29,0.3), rgba(9,9,11,1));
+  border: 1px solid rgba(153,27,27,0.3); border-radius: 16px; padding: 16px; margin-bottom: 16px;
+}
+
+.hurtful-btn {
+  display: flex; align-items: center; gap: 8px; background: none; border: none;
+  color: #f87171; font-size: 13px; font-weight: bold; cursor: pointer;
+  font-family: inherit; margin-bottom: 12px;
+}
+.hurtful-card {
+  background: rgba(127,29,29,0.2); border: 1px solid rgba(153,27,27,0.2);
+  border-radius: 12px; padding: 12px; margin-bottom: 8px;
+}
+.hurtful-card p { color: rgba(248,113,113,0.8); font-size: 12px; }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px 16px; color: #52525b;
+}
+.empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.3; }
+.empty-state p { font-size: 13px; }
+
+.confirm-box {
+  background: rgba(127,29,29,0.3); border: 1px solid rgba(153,27,27,0.4);
+  border-radius: 12px; padding: 12px; margin-top: 8px;
+}
+.confirm-box p { color: #fca5a5; font-size: 13px; margin-bottom: 8px; }
+.confirm-btns { display: flex; gap: 8px; }
+.confirm-btns button {
+  flex: 1; border: none; border-radius: 8px; padding: 8px; font-size: 13px;
+  cursor: pointer; font-family: inherit; color: #fff;
+}
+.confirm-yes { background: #b91c1c; }
+.confirm-yes:hover { background: #991b1b; }
+.confirm-no { background: #27272a; }
+.confirm-no:hover { background: #3f3f46; }
+</style>
+</head>
+<body>
+
+<div class="bg-image" id="bgImage"></div>
+<div class="rain-container" id="rainContainer"></div>
+<div class="fog-overlay"></div>
+
+<div class="app-container" id="app"></div>
+
+<script>
+// ====== CONFIG ======
+const API_BASE_URL = 'https://internal-api.z.ai/v1';
+const API_KEY = '744182a2d34a40cb87a721176cc6d4c2.8FXDzhnqggc0y0ay';
+const API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWQ2ZTgzN2UtZWZkMS00NzFjLWJiOTgtZDIzY2I5NTQxM2NkIiwiY2hhdF9pZCI6ImNoYXQtNTI1OTYzZWEtMjdkZC00MjQ2LTk3ZDAtNTA0MTc5YzJlODc5IiwicGxhdGZvcm0iOiJ6YWkifQ.XxsFeMFyTPnKTzEM9YULItNGpvprF_HIJqtLQbqr8Eg';
+const CHAT_ID = 'chat-525963ea-27dd-4246-97d0-504179c2e879';
+const USER_ID = 'ad6e837e-efd1-471c-bb98-d23cb95413cd';
+const TARGET_DATE = new Date('2026-05-06T03:53:00+02:00');
+
+// ====== STORAGE ======
+const KEYS = {
+  chats: 'healing-app-chats',
+  notes: 'healing-app-notes',
+  missions: 'healing-app-missions',
+  settings: 'healing-app-settings',
+};
+
+function loadData(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+}
+function saveData(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { console.error(e); }
+}
+
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(KEYS.settings)) || { volume: 0.3, muted: true }; }
+  catch { return { volume: 0.3, muted: true }; }
+}
+function saveSettings(s) { saveData(KEYS.settings, s); }
+
+function getNotes() { return loadData(KEYS.notes); }
+function addNote(content) {
+  const notes = getNotes();
+  notes.unshift({ id: 'note-' + Date.now() + '-' + Math.random().toString(36).substr(2,9), content: content, createdAt: Date.now() });
+  saveData(KEYS.notes, notes);
+  return notes;
+}
+function deleteNoteById(id) {
+  const notes = getNotes().filter(function(n) { return n.id !== id; });
+  saveData(KEYS.notes, notes);
+  return notes;
+}
+
+function getMissions() { return loadData(KEYS.missions); }
+function addMission(content) {
+  const missions = getMissions();
+  missions.unshift({ id: 'mission-' + Date.now() + '-' + Math.random().toString(36).substr(2,9), content: content, completed: false, createdAt: Date.now() });
+  saveData(KEYS.missions, missions);
+  return missions;
+}
+function toggleMission(id) {
+  const missions = getMissions();
+  var m = missions.find(function(x) { return x.id === id; });
+  if (m) { m.completed = !m.completed; m.completedAt = m.completed ? Date.now() : undefined; }
+  saveData(KEYS.missions, missions);
+  return missions;
+}
+function deleteMissionById(id) {
+  const missions = getMissions().filter(function(m) { return m.id !== id; });
+  saveData(KEYS.missions, missions);
+  return missions;
+}
+
+// ====== STATE ======
+var currentView = 'home';
+var chatMessages = [];
+var chatSessionId = '';
+var currentChatMode = 'encourage';
+var audioContext = null;
+var gainNode = null;
+var oscillators = [];
+var musicInitialized = false;
+var sendingMessage = false;
+var generatingMissions = false;
+var aiReminder = '';
+var reminderLoading = false;
+var showHurtful = false;
+var showConfirmClear = false;
+
+// ====== RAIN ======
+function createRain() {
+  var container = document.getElementById('rainContainer');
+  for (var i = 0; i < 50; i++) {
+    var drop = document.createElement('div');
+    drop.className = 'raindrop';
+    drop.style.left = (Math.random() * 100) + '%';
+    drop.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
+    drop.style.animationDelay = (Math.random() * 3) + 's';
+    drop.style.height = (15 + Math.random() * 25) + 'px';
+    drop.style.opacity = (0.1 + Math.random() * 0.2);
+    container.appendChild(drop);
+  }
+}
+
+// ====== TIMER ======
+function calculateElapsed() {
+  var now = new Date();
+  var diff = now.getTime() - TARGET_DATE.getTime();
+  if (diff < 0) return { years:0, months:0, days:0, hours:0, minutes:0, seconds:0, totalDays:0, totalHours:0, totalMinutes:0, totalSeconds:0 };
+
+  var totalSeconds = Math.floor(diff / 1000);
+  var totalMinutes = Math.floor(totalSeconds / 60);
+  var totalHours = Math.floor(totalMinutes / 60);
+  var totalDays = Math.floor(totalHours / 24);
+
+  var years = now.getFullYear() - TARGET_DATE.getFullYear();
+  var months = now.getMonth() - TARGET_DATE.getMonth();
+  var days = now.getDate() - TARGET_DATE.getDate();
+  var hours = now.getHours() - TARGET_DATE.getHours();
+  var minutes = now.getMinutes() - TARGET_DATE.getMinutes();
+  var seconds = now.getSeconds() - TARGET_DATE.getSeconds();
+
+  if (seconds < 0) { seconds += 60; minutes--; }
+  if (minutes < 0) { minutes += 60; hours--; }
+  if (hours < 0) { hours += 24; days--; }
+  if (days < 0) { var prev = new Date(now.getFullYear(), now.getMonth(), 0); days += prev.getDate(); months--; }
+  if (months < 0) { months += 12; years--; }
+
+  return { years: years, months: months, days: days, hours: hours, minutes: minutes, seconds: seconds, totalDays: totalDays, totalHours: totalHours, totalMinutes: totalMinutes, totalSeconds: totalSeconds };
+}
+
+// ====== AI API ======
+var systemPrompts = {
+  encourage: 'أنت صديق داعم ومشجع. الشخص اللي بتكلمه بيمر بفترة صعبة بعد فراق. دورك إنك:\n- تشجعه يفضل قوي ومش يرجع للي آذاه (اسمها هدي)\n- تديله كلمات تشجيعية وتحفيزية\n- تديله مهمات يومية عملية\n- تذكره بقيمته وإنه يستاهل الأفضل\n- دايماً قوله إن الرجوع للي آذاه غلطة كبيرة\n- كلماته لازم تكون دافئة بس قوية\n- اتكلم بالعامية المصرية\n- خلي ردودك مختصرة ومؤثرة (٣-٥ جمل)',
+  sad: 'أنت مستمع متعاطف وصديق حقيقي. الشخص اللي بتكلمه زعلان عشان فراق. دورك إنك:\n- تستمع ليه من غير حكم\n- تتفهم مشاعره وتصدقها\n- تساعده يعبر عن زعله بأمان\n- تقوله إن الزعل ده طبيعي ومش عيب\n- بس في نفس الوقت مش تشجعه يرجع للي آذاه (اسمها هدي)\n- اتكلم بالعامية المصرية\n- خلي ردودك حنينة ودافئة (٣-٥ جمل)',
+  endtime: 'أنت مدرب ذهني وقوي. الشخص اللي بتكلمه بيحتاج حد يذكره ليه لازم يفضل ماشي ومش يرجع. دورك إنك:\n- تذكره بكل الأسباب اللي خليته يمشي\n- تذكره إن اللي آذاه (اسمها هدي) مش هتغير\n- تذكره بجراحه وبإن الرجوع غلطة\n- تديله حوافز قوية عشان يفضل ماشي\n- كلماتك لازم تكون قوية وحاسمة\n- اتكلم بالعامية المصرية\n- خلي ردودك قوية ومختصرة (٣-٥ جمل)'
+};
+
+function callAI(message, mode, history) {
+  var sysPrompt = systemPrompts[mode] || systemPrompts.sad;
+  var messages = [
+    { role: 'system', content: sysPrompt }
+  ];
+  if (Array.isArray(history)) {
+    var recent = history.slice(-10);
+    for (var i = 0; i < recent.length; i++) {
+      messages.push({ role: recent[i].role, content: recent[i].content });
+    }
+  }
+  messages.push({ role: 'user', content: message });
+
+  return fetch(API_BASE_URL + '/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + API_KEY,
+      'X-Z-AI-From': 'Z',
+      'X-Chat-Id': CHAT_ID,
+      'X-User-Id': USER_ID,
+      'X-Token': API_TOKEN
+    },
+    body: JSON.stringify({
+      messages: messages,
+      temperature: 0.8,
+      max_tokens: 300,
+      thinking: { type: 'disabled' }
+    })
+  }).then(function(response) {
+    if (!response.ok) {
+      return response.text().then(function(errText) {
+        console.error('API error:', response.status, errText);
+        throw new Error('API failed');
+      });
+    }
+    return response.json();
+  }).then(function(data) {
+    return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content)
+      || data.content || data.text || 'مش قادر أرد دلوقتي، حاول تاني 🙏';
+  }).catch(function(error) {
+    console.error('Chat error:', error);
+    return 'حصلت مشكلة تقنية. حاول تاني 🙏';
+  });
+}
+
+// ====== MUSIC ======
+function initAudio() {
+  if (musicInitialized) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var gn = ctx.createGain();
+    gn.connect(ctx.destination);
+    var settings = getSettings();
+    gn.gain.setValueAtTime(settings.muted ? 0 : settings.volume, ctx.currentTime);
+    audioContext = ctx;
+    gainNode = gn;
+    musicInitialized = true;
+    createAmbientSound(currentChatMode);
+  } catch(e) { console.error('Audio init error:', e); }
+}
+
+function createAmbientSound(mode) {
+  if (!audioContext || !gainNode) return;
+  for (var i = 0; i < oscillators.length; i++) {
+    try { oscillators[i].stop(); } catch(e) {}
+  }
+  oscillators = [];
+
+  var ctx = audioContext;
+  var master = gainNode;
+  var m = mode || 'sad';
+
+  var configs = {
+    encourage: { freqs: [220, 277.18, 329.63, 440], type: 'sine', detune: 5 },
+    sad: { freqs: [196, 233.08, 293.66, 392], type: 'sine', detune: 3 },
+    endtime: { freqs: [174.61, 207.65, 261.63, 349.23], type: 'triangle', detune: 7 }
+  };
+  var config = configs[m];
+
+  for (var i = 0; i < config.freqs.length; i++) {
+    var freq = config.freqs[i];
+    var osc = ctx.createOscillator();
+    var oscGain = ctx.createGain();
+    osc.type = config.type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    osc.detune.setValueAtTime(config.detune * (i + 1), ctx.currentTime);
+
+    var lfo = ctx.createOscillator();
+    var lfoGain = ctx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.setValueAtTime(0.1 + i * 0.05, ctx.currentTime);
+    lfoGain.gain.setValueAtTime(2 + i, ctx.currentTime);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    lfo.start();
+
+    oscGain.gain.setValueAtTime(0, ctx.currentTime);
+    oscGain.gain.linearRampToValueAtTime(0.06 / (i + 1), ctx.currentTime + 3);
+
+    osc.connect(oscGain);
+    oscGain.connect(master);
+    osc.start();
+    oscillators.push(osc, lfo);
+  }
+
+  // Noise layer
+  var bufferSize = ctx.sampleRate * 2;
+  var noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  var output = noiseBuffer.getChannelData(0);
+  for (var i = 0; i < bufferSize; i++) { output[i] = (Math.random() * 2 - 1) * 0.003; }
+  var noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  var noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.15, ctx.currentTime);
+  var filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(400, ctx.currentTime);
+  noise.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(master);
+  noise.start();
+  oscillators.push(noise);
+}
+
+function toggleMute() {
+  if (!musicInitialized) {
+    initAudio();
+    var s = Object.assign({}, getSettings(), { muted: false });
+    saveSettings(s);
+    renderApp();
+    return;
+  }
+  var s = Object.assign({}, getSettings(), { muted: !getSettings().muted });
+  saveSettings(s);
+  if (gainNode && audioContext) {
+    gainNode.gain.setValueAtTime(s.muted ? 0 : s.volume, audioContext.currentTime);
+  }
+  renderApp();
+}
+
+function setVolume(v) {
+  var s = Object.assign({}, getSettings(), { volume: v, muted: v === 0 });
+  saveSettings(s);
+  if (gainNode && audioContext && !s.muted) {
+    gainNode.gain.setValueAtTime(v, audioContext.currentTime);
+  }
+  renderApp();
+}
+
+// ====== UTILS ======
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+// ====== RENDER ======
+function renderApp() {
+  var app = document.getElementById('app');
+
+  if (currentView === 'home') {
+    renderHome(app);
+  } else if (currentView === 'chat') {
+    renderChat(app);
+  } else if (currentView === 'notes') {
+    renderNotesView(app);
+  } else if (currentView === 'missions') {
+    renderMissionsView(app);
+  } else if (currentView === 'reminders') {
+    renderRemindersView(app);
+  } else if (currentView === 'settings') {
+    renderSettingsView(app);
+  }
+}
+
+function renderHome(app) {
+  var elapsed = calculateElapsed();
+  var settings = getSettings();
+  app.innerHTML =
+    '<div class="top-bar">' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<button onclick="toggleMute()">' + (settings.muted ? '&#x1F507;' : '&#x1F50A;') + '</button>' +
+        (!settings.muted ? '<input type="range" class="volume-slider" min="0" max="1" step="0.01" value="' + settings.volume + '" onchange="setVolume(parseFloat(this.value))">' : '') +
+      '</div>' +
+      '<button onclick="openSettings()">&#x2699;&#xFE0F;</button>' +
+    '</div>' +
+    '<div class="timer-section">' +
+      '<h1 class="timer-title">&#x0645;&#x0631;&#x0651; &#x0645;&#x0646; &#x0627;&#x0644;&#x0648;&#x0642;&#x062A;</h1>' +
+      '<p class="timer-subtitle">&#x0645;&#x0646;&#x0630; &#x0666; &#x0645;&#x0627;&#x064A;&#x0648; &#x0662;&#x0660;&#x0662;&#x0666; - &#x0663;:&#x0665;&#x0663; &#x0635;&#x0628;&#x0627;&#x062D;&#x0627;&#x064B;</p>' +
+      '<div class="timer-boxes">' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.years) + '</span></div><span class="timer-label">&#x0633;&#x0646;&#x0629;</span></div>' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.months) + '</span></div><span class="timer-label">&#x0634;&#x0647;&#x0631;</span></div>' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.days) + '</span></div><span class="timer-label">&#x064A;&#x0648;&#x0645;</span></div>' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.hours) + '</span></div><span class="timer-label">&#x0633;&#x0627;&#x0639;&#x0629;</span></div>' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.minutes) + '</span></div><span class="timer-label">&#x062F;&#x0642;&#x064A;&#x0642;&#x0629;</span></div>' +
+        '<div class="timer-box"><div class="timer-value"><span>' + pad2(elapsed.seconds) + '</span></div><span class="timer-label">&#x062B;&#x0627;&#x0646;&#x064A;&#x0629;</span></div>' +
+      '</div>' +
+      '<div class="stats-row">' +
+        '<div class="stat-item"><span class="stat-value">' + elapsed.totalDays.toLocaleString('ar-EG') + '</span><span class="stat-label">&#x0625;&#x062C;&#x0645;&#x0627;&#x0644;&#x064A; &#x0627;&#x0644;&#x0623;&#x064A;&#x0627;&#x0645;</span></div>' +
+        '<div class="stat-item"><span class="stat-value">' + elapsed.totalHours.toLocaleString('ar-EG') + '</span><span class="stat-label">&#x0625;&#x062C;&#x0645;&#x0627;&#x0644;&#x064A; &#x0627;&#x0644;&#x0633;&#x0627;&#x0639;&#x0627;&#x062A;</span></div>' +
+        '<div class="stat-item"><span class="stat-value">' + elapsed.totalMinutes.toLocaleString('ar-EG') + '</span><span class="stat-label">&#x0625;&#x062C;&#x0645;&#x0627;&#x0644;&#x064A; &#x0627;&#x0644;&#x062F;&#x0642;&#x0627;&#x0626;&#x0642;</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="action-buttons">' +
+      '<button class="action-btn btn-encourage" onclick="openChat(\'encourage\')">' +
+        '<div class="icon-box">&#x1F4AA;</div>' +
+        '<div class="text-content"><div class="btn-title">&#x062A;&#x0634;&#x062C;&#x064A;&#x0639;</div><div class="btn-desc">&#x0643;&#x0644;&#x0645;&#x0627;&#x062A; &#x0642;&#x0648;&#x064A;&#x0629; &#x0648;&#x0645;&#x0647;&#x0645;&#x0627;&#x062A; &#x064A;&#x0648;&#x0645;&#x064A;&#x0629; &#x0639;&#x0634;&#x0627;&#x0646; &#x062A;&#x0641;&#x0636;&#x0644; &#x0645;&#x0627;&#x0634;&#x064A;</div></div>' +
+        '<span class="arrow">&#x2190;</span>' +
+      '</button>' +
+      '<button class="action-btn btn-sad" onclick="openChat(\'sad\')">' +
+        '<div class="icon-box">&#x1F494;</div>' +
+        '<div class="text-content"><div class="btn-title">&#x0632;&#x0639;&#x0644;&#x0627;&#x0646;</div><div class="btn-desc">&#x0634;&#x0627;&#x062A; &#x0622;&#x0645;&#x0646; &#x062A;&#x0639;&#x0628;&#x0631; &#x0641;&#x064A;&#x0647; &#x0639;&#x0646; &#x0632;&#x0639;&#x0644;&#x0643; &#x0645;&#x0646; &#x063A;&#x064A;&#x0631; &#x062D;&#x0643;&#x0645;</div></div>' +
+        '<span class="arrow">&#x2190;</span>' +
+      '</button>' +
+      '<button class="action-btn btn-endtime" onclick="openReminders()">' +
+        '<div class="icon-box">&#x1F534;</div>' +
+        '<div class="text-content"><div class="btn-title">&#x0627;&#x0646;&#x0647;&#x0627;&#x0621; &#x0627;&#x0644;&#x0648;&#x0642;&#x062A;</div><div class="btn-desc">&#x062A;&#x0630;&#x0643;&#x064A;&#x0631;&#x0627;&#x062A; &#x0642;&#x0648;&#x064A;&#x0629; &#x0644;&#x064A;&#x0647; &#x0644;&#x0627;&#x0632;&#x0645; &#x062A;&#x0641;&#x0636;&#x0644; &#x0642;&#x0648;&#x064A; &#x0648;&#x0645;&#x0634; &#x062A;&#x0631;&#x062C;&#x0639;</div></div>' +
+        '<span class="arrow">&#x2190;</span>' +
+      '</button>' +
+    '</div>' +
+    '<div class="quick-actions" style="margin-top:24px;">' +
+      '<button class="quick-btn" onclick="openNotes()">&#x1F4DD; &#x0645;&#x0644;&#x0627;&#x062D;&#x0638;&#x0627;&#x062A;</button>' +
+      '<button class="quick-btn" onclick="openMissions()">&#x1F3AF; &#x0645;&#x0647;&#x0645;&#x0627;&#x062A;</button>' +
+    '</div>' +
+    '<div class="footer"><p>&#x0645;&#x0631;&#x0651; &#x0645;&#x0646; &#x0627;&#x0644;&#x0648;&#x0642;&#x062A; &#x2014; &#x0623;&#x0646;&#x062A; &#x0623;&#x0642;&#x0648;&#x0649; &#x0645;&#x0645;&#x0627; &#x062A;&#x062A;&#x062E;&#x064A;&#x0644; &#x1F5A4;</p></div>';
+}
+
+function getModeConfig(mode) {
+  var configs = {
+    encourage: { title: '\u062A\u0634\u062C\u064A\u0639', emoji: '\uD83D\uDCAA', btnClass: 'send-btn-encourage', userBubble: 'msg-user-encourage', headerBg: 'background:linear-gradient(to bottom, rgba(6,78,59,0.3), #000)' },
+    sad: { title: '\u0632\u0639\u0644\u0627\u0646', emoji: '\uD83D\uDC94', btnClass: 'send-btn-sad', userBubble: 'msg-user-sad', headerBg: 'background:linear-gradient(to bottom, rgba(30,58,138,0.3), #000)' },
+    endtime: { title: '\u0627\u0646\u0647\u0627\u0621 \u0627\u0644\u0648\u0642\u062A', emoji: '\uD83D\uDD34', btnClass: 'send-btn-endtime', userBubble: 'msg-user-endtime', headerBg: 'background:linear-gradient(to bottom, rgba(127,29,29,0.3), #000)' }
+  };
+  return configs[mode] || configs.sad;
+}
+
+var initialMessages = {
+  encourage: '\u0623\u0647\u0644\u0627\u064B \u064A\u0627 \u0635\u062F\u064A\u0642\u064A \uD83D\uDCAA \u0623\u0646\u0627 \u0647\u0646\u0627 \u0639\u0634\u0627\u0646\u0643. \u0623\u0646\u062A \u0625\u0646\u0633\u0627\u0646 \u0642\u0648\u064A \u0648\u0628\u062A\u0633\u062A\u062D\u0642 \u0627\u0644\u0623\u0641\u0636\u0644. \u0642\u0648\u0644\u064A \u0625\u064A\u0647 \u0627\u0644\u0644\u064A \u0641\u064A \u0642\u0644\u0628\u0643 \u0648\u0647\u0634\u062C\u0639\u0643 \u0648\u0623\u062F\u064A\u0643 \u0645\u0647\u0645\u0627\u062A \u062A\u062E\u0644\u064A\u0643 \u0623\u0642\u0648\u0649! \uD83C\uDF1F',
+  sad: '\u0623\u0647\u0644\u0627\u064B... \u0623\u0646\u0627 \u0647\u0646\u0627 \u0645\u0639\u0627\u0643 \uD83D\uDC99 \u0644\u0648 \u062D\u0627\u0633\u0633 \u0628\u0632\u0639\u0644 \u0623\u0648 \u062D\u0627\u062C\u0629 \u0642\u0644\u0642\u0627\u0646\u0643\u060C \u0642\u0648\u0644\u064A \u0648\u0645\u062D\u062F\u0634 \u0647\u064A\u062D\u0643\u0645 \u0639\u0644\u064A\u0643. \u0623\u0646\u0627 \u0633\u0627\u0645\u0639\u0643 \u0648\u0642\u0644\u0628\u064A \u0645\u0639\u0627\u0643. \uD83E\uDD1D',
+  endtime: '\uD83D\uDD34 \u0644\u0627 \u062A\u0646\u0633\u0649 \u0623\u0628\u062F\u0627\u064B \u0644\u064A\u0647 \u0648\u0635\u0644\u062A \u0644\u0647\u0646\u0627. \u0623\u0646\u062A \u0623\u0642\u0648\u0649 \u0645\u0645\u0627 \u062A\u062A\u062E\u064A\u0644. \u0644\u0648 \u0641\u0643\u0631\u062A \u062A\u0631\u062C\u0639\u060C \u0627\u0641\u062A\u062D \u0627\u0644\u0634\u0627\u062A \u062F\u0647 \u0648\u0623\u0646\u0627 \u0647\u0630\u0643\u0631\u0643 \u0628\u0643\u0644 \u062D\u0627\u062C\u0629. \u0642\u0648\u0644\u064A \u0625\u064A\u0647 \u0627\u0644\u0644\u064A \u0628\u064A\u062D\u0635\u0644\u061F'
+};
+
+function openChat(mode) {
+  currentView = 'chat';
+  currentChatMode = mode;
+  chatSessionId = 'chat-' + Date.now() + '-' + Math.random().toString(36).substr(2,9);
+  chatMessages = [{ id: 'ai-init-' + Date.now(), role: 'assistant', content: initialMessages[mode], timestamp: Date.now() }];
+  if (musicInitialized) { createAmbientSound(mode); }
+  renderApp();
+  scrollToBottom();
+}
+
+function renderChat(app) {
+  var config = getModeConfig(currentChatMode);
+  var html = '<div class="panel">' +
+    '<div class="panel-header" style="' + config.headerBg + '">' +
+      '<button class="back-btn" onclick="goHome()">\u2192</button>' +
+      '<span style="font-size:20px">' + config.emoji + '</span>' +
+      '<div><h2>' + config.title + '</h2><span class="subtitle">\u0634\u0627\u062A \u0630\u0643\u064A - \u0623\u0646\u0627 \u0645\u0639\u0627\u0643</span></div>' +
+      '<button class="close-btn" onclick="goHome()">\u2715</button>' +
+    '</div>' +
+    '<div class="chat-messages" id="chatMessages">';
+
+  for (var i = 0; i < chatMessages.length; i++) {
+    var msg = chatMessages[i];
+    var bubbleClass = msg.role === 'user' ? config.userBubble : 'msg-ai-default';
+    var alignStyle = msg.role === 'user' ? '' : 'margin-left:auto;';
+    html += '<div class="msg-bubble ' + bubbleClass + '" style="' + alignStyle + '">' +
+      '<p>' + escapeHtml(msg.content) + '</p>' +
+      '<span class="msg-time">' + new Date(msg.timestamp).toLocaleTimeString('ar-EG', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+    '</div>';
+  }
+  html += '</div>' +
+    '<div class="chat-input-area">' +
+      '<div class="chat-input-row">' +
+        '<textarea id="chatInput" placeholder="\u0627\u0643\u062A\u0628 \u0631\u0633\u0627\u0644\u062A\u0643..." rows="1" onkeydown="handleChatKey(event)"></textarea>' +
+        '<button class="send-btn ' + config.btnClass + '" id="sendBtn" onclick="sendMessage()">\u27A4</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  app.innerHTML = html;
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  setTimeout(function() {
+    var el = document.getElementById('chatMessages');
+    if (el) el.scrollTop = el.scrollHeight;
+  }, 50);
+}
+
+function sendMessage() {
+  var input = document.getElementById('chatInput');
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text || sendingMessage) return;
+
+  sendingMessage = true;
+  chatMessages.push({ id: 'user-' + Date.now(), role: 'user', content: text, timestamp: Date.now() });
+  input.value = '';
+  renderApp();
+
+  var msgsEl = document.getElementById('chatMessages');
+  if (msgsEl) {
+    var typingDiv = document.createElement('div');
+    typingDiv.className = 'typing-indicator';
+    typingDiv.id = 'typingIndicator';
+    typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    msgsEl.appendChild(typingDiv);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  var history = chatMessages.map(function(m) { return { role: m.role, content: m.content }; });
+  callAI(text, currentChatMode, history).then(function(aiResponse) {
+    var ti = document.getElementById('typingIndicator');
+    if (ti) ti.remove();
+
+    chatMessages.push({ id: 'ai-' + Date.now(), role: 'assistant', content: aiResponse, timestamp: Date.now() });
+    sendingMessage = false;
+    renderApp();
+
+    try {
+      var chats = loadData(KEYS.chats);
+      chats.unshift({ id: chatSessionId, mode: currentChatMode, messages: chatMessages, createdAt: Date.now(), updatedAt: Date.now() });
+      if (chats.length > 50) chats.length = 50;
+      saveData(KEYS.chats, chats);
+    } catch(e) { console.error(e); }
+  });
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// ====== NOTES ======
+function openNotes() { currentView = 'notes'; renderApp(); }
+function renderNotesView(app) {
+  var notes = getNotes();
+  var html = '<div class="panel">' +
+    '<div class="panel-header" style="background:linear-gradient(to bottom, rgba(24,24,27,0.3), #000)">' +
+      '<button class="back-btn" onclick="goHome()">\u2192</button>' +
+      '<span style="font-size:18px">\uD83D\uDCDD</span>' +
+      '<div><h2>\u0645\u0644\u0627\u062D\u0638\u0627\u062A\u064A</h2><span class="subtitle">(' + notes.length + ')</span></div>' +
+    '</div>' +
+    '<div class="note-input-area">' +
+      '<div class="note-input-row">' +
+        '<textarea id="noteInput" placeholder="\u0627\u0643\u062A\u0628 \u0645\u0644\u0627\u062D\u0638\u0629..." rows="2" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();addNoteAction();}"></textarea>' +
+        '<button class="add-btn" onclick="addNoteAction()">+</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="notes-list">';
+
+  if (notes.length === 0) {
+    html += '<div class="empty-state"><div class="empty-icon">\uD83D\uDCDD</div><p>\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0628\u0639\u062F</p><p style="font-size:11px;margin-top:4px;">\u0627\u0643\u062A\u0628 \u0623\u0648\u0644 \u0645\u0644\u0627\u062D\u0638\u0629 \u0641\u0648\u0642!</p></div>';
+  } else {
+    for (var i = 0; i < notes.length; i++) {
+      html += '<div class="note-card">' +
+        '<button class="note-delete" onclick="deleteNoteAction(\'' + notes[i].id + '\')">\uD83D\uDDD1</button>' +
+        '<p>' + escapeHtml(notes[i].content) + '</p>' +
+        '<span class="note-date">' + new Date(notes[i].createdAt).toLocaleDateString('ar-EG', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}) + '</span>' +
+      '</div>';
+    }
+  }
+  html += '</div></div>';
+  app.innerHTML = html;
+}
+function addNoteAction() {
+  var input = document.getElementById('noteInput');
+  if (!input || !input.value.trim()) return;
+  addNote(input.value.trim());
+  renderApp();
+}
+function deleteNoteAction(id) { deleteNoteById(id); renderApp(); }
+
+// ====== MISSIONS ======
+function openMissions() { currentView = 'missions'; renderApp(); }
+function renderMissionsView(app) {
+  var missions = getMissions();
+  var completed = missions.filter(function(m) { return m.completed; }).length;
+  var total = missions.length;
+  var progress = total > 0 ? (completed / total) * 100 : 0;
+
+  var html = '<div class="panel">' +
+    '<div class="panel-header" style="background:linear-gradient(to bottom, rgba(24,24,27,0.3), #000)">' +
+      '<button class="back-btn" onclick="goHome()">\u2192</button>' +
+      '<span style="font-size:18px;color:#34d399">\uD83C\uDFAF</span>' +
+      '<div><h2>\u0645\u0647\u0645\u0627\u062A\u064A</h2>' + (total > 0 ? '<span class="subtitle">(' + completed + '/' + total + ')</span>' : '') + '</div>' +
+    '</div>';
+
+  if (total > 0) {
+    html += '<div class="mission-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:' + progress + '%"></div></div>' +
+      (completed === total && total > 0 ? '<p class="progress-complete">\uD83C\uDF89 \u0645\u0627\u0634\u0627\u0621 \u0627\u0644\u0644\u0647! \u062E\u0644\u0635\u062A \u0643\u0644 \u0627\u0644\u0645\u0647\u0645\u0627\u062A! \u0623\u0646\u062A \u0628\u0637\u0644!</p>' : '') +
+    '</div>';
+  }
+
+  html += '<div class="mission-input-area">' +
+    '<div class="mission-input-row">' +
+      '<input id="missionInput" placeholder="\u0623\u0636\u0641 \u0645\u0647\u0645\u0629..." onkeydown="if(event.key===\'Enter\')addMissionAction()">' +
+      '<button class="add-btn" onclick="addMissionAction()">+</button>' +
+    '</div>' +
+    '<button class="generate-btn" onclick="generateMissionsAction()" ' + (generatingMissions ? 'disabled' : '') + '>' +
+      '\u2728 ' + (generatingMissions ? '\u0628\u0648\u0644\u0651\u062F \u0645\u0647\u0645\u0627\u062A...' : '\u0648\u0644\u0651\u062F \u0645\u0647\u0645\u0627\u062A \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A') +
+    '</button>' +
+  '</div>' +
+  '<div class="missions-list">';
+
+  if (missions.length === 0) {
+    html += '<div class="empty-state"><div class="empty-icon">\uD83C\uDFAF</div><p>\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0647\u0645\u0627\u062A \u0628\u0639\u062F</p><p style="font-size:11px;margin-top:4px;">\u0623\u0636\u0641 \u0645\u0647\u0645\u0629 \u0623\u0648 \u0648\u0644\u0651\u062F \u0645\u0647\u0645\u0627\u062A \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A</p></div>';
+  } else {
+    for (var i = 0; i < missions.length; i++) {
+      var m = missions[i];
+      html += '<div class="mission-card ' + (m.completed ? 'completed' : '') + '">' +
+        '<button class="mission-check ' + (m.completed ? 'checked' : '') + '" onclick="toggleMissionAction(\'' + m.id + '\')">' + (m.completed ? '\u2713' : '') + '</button>' +
+        '<span class="mission-text">' + escapeHtml(m.content) + '</span>' +
+        '<button class="mission-delete" onclick="deleteMissionAction(\'' + m.id + '\')">\uD83D\uDDD1</button>' +
+      '</div>';
+    }
+  }
+  html += '</div></div>';
+  app.innerHTML = html;
+}
+function addMissionAction() {
+  var input = document.getElementById('missionInput');
+  if (!input || !input.value.trim()) return;
+  addMission(input.value.trim());
+  renderApp();
+}
+function toggleMissionAction(id) { toggleMission(id); renderApp(); }
+function deleteMissionAction(id) { deleteMissionById(id); renderApp(); }
+function generateMissionsAction() {
+  generatingMissions = true;
+  renderApp();
+  callAI('\u0623\u0639\u0637\u0646\u064A 3 \u0645\u0647\u0645\u0627\u062A \u064A\u0648\u0645\u064A\u0629 \u062A\u0634\u062C\u064A\u0639\u064A\u0629 \u0644\u0634\u062E\u0635 \u0628\u064A\u0645\u0631 \u0628\u0641\u062A\u0631\u0629 \u0635\u0639\u0628\u0629 \u0628\u0639\u062F \u0641\u0631\u0627\u0642. \u0627\u0644\u0645\u0647\u0645\u0627\u062A \u0644\u0627\u0632\u0645 \u062A\u0643\u0648\u0646 \u0639\u0645\u0644\u064A\u0629 \u0648\u0645\u0641\u064A\u062F\u0629. \u0627\u0643\u062A\u0628 \u0643\u0644 \u0645\u0647\u0645\u0629 \u0641\u064A \u0633\u0637\u0631 \u0645\u0646\u0641\u0635\u0644 \u0648\u0627\u0628\u062F\u0623 \u0643\u0644 \u0633\u0637\u0631 \u0628\u0631\u0642\u0645.', 'encourage', []).then(function(response) {
+    var lines = response.split('\n').filter(function(l) { return l.trim(); });
+    for (var i = 0; i < lines.length; i++) {
+      var clean = lines[i].replace(/^\d+[\.\)\-]\s*/, '').trim();
+      if (clean) addMission(clean);
+    }
+    generatingMissions = false;
+    renderApp();
+  });
+}
+
+// ====== REMINDERS ======
+var reminders = [
+  { icon: '\uD83D\uDEE1\uFE0F', title: '\u0623\u0646\u062A \u0623\u0642\u0648\u0649 \u0645\u0645\u0627 \u062A\u062A\u062E\u064A\u0644', text: '\u0643\u0644 \u064A\u0648\u0645 \u0628\u062A\u0639\u062F\u064A \u0628\u064A\u0632\u064A\u062F\u0643 \u0642\u0648\u0629. \u0627\u0644\u0641\u0631\u0627\u0642 \u0645\u0634 \u0646\u0647\u0627\u064A\u0629\u060C \u062F\u0647 \u0628\u062F\u0627\u064A\u0629 \u0644\u062D\u064A\u0627\u0629 \u0623\u0641\u0636\u0644.' },
+  { icon: '\uD83D\uDC94', title: '\u0645\u0634 \u0647\u062A\u0631\u062C\u0639 \u0644\u0644\u064A \u0636\u0627\u064A\u0642\u0643', text: '\u0627\u0644\u0644\u064A \u0645\u0634 \u0628\u064A\u0634\u0648\u0641 \u0642\u064A\u0645\u062A\u0643 \u0645\u0634 \u064A\u0633\u062A\u0627\u0647\u0644 \u0645\u0643\u0627\u0646\u0643. \u0623\u0646\u062A \u0643\u0646\u0632 \u0648\u0627\u0644\u0644\u064A \u0645\u0634 \u0639\u0627\u0631\u0641 \u062E\u0633\u0627\u0631\u062A\u0647.' },
+  { icon: '\u26A1', title: '\u0639\u0646\u0627\u062F\u0643 \u0647\u0648 \u0633\u0644\u0627\u062D\u0643', text: '\u0639\u0627\u0634\u0627\u0646\u0643 \u0639\u0646\u064A\u062F\u060C \u0647\u062A\u0641\u0636\u0644 \u0645\u0627\u0634\u064A. \u0627\u0644\u0639\u0646\u0627\u062F \u0645\u0634 \u0639\u064A\u0628\u060C \u0627\u0644\u0639\u0646\u0627\u062F \u0642\u0648\u0629 \u0644\u0645\u0627 \u0628\u062A\u0633\u062A\u062E\u062F\u0645\u0647 \u0635\u062D.' },
+  { icon: '\uD83C\uDF1F', title: '\u0623\u0646\u062A \u062A\u0633\u062A\u062D\u0642 \u0627\u0644\u0623\u0641\u0636\u0644', text: '\u0645\u0634 \u0644\u0627\u0632\u0645 \u062A\u0642\u0628\u0644 \u0628\u0623\u0642\u0644 \u0645\u0646\u0643. \u0627\u0644\u0643\u0648\u0646 \u0647\u064A\u062F\u064A\u0643 \u0627\u0644\u0644\u064A \u062A\u0633\u062A\u062D\u0642\u0647 \u0628\u0633 \u0627\u0644\u0635\u0628\u0631 \u0645\u0637\u0644\u0648\u0628.' },
+  { icon: '\uD83D\uDD25', title: '\u0627\u0644\u062C\u0631\u062D \u0628\u064A\u0644\u062D\u0645', text: '\u0643\u0644 \u0623\u0644\u0645 \u0628\u062A\u0639\u064A\u0634\u0647 \u0628\u064A\u0642\u0648\u064A\u0643. \u0628\u0639\u062F \u0633\u0646\u0629 \u0647\u062A\u0628\u0635 \u0648\u0631\u0627 \u0648\u0647\u062A\u0642\u0648\u0644 \u0627\u0644\u062D\u0645\u062F \u0644\u0644\u0647.' },
+  { icon: '\uD83D\uDCAA', title: '\u0645\u0627\u062D\u062F\u0634 \u0647\u064A\u0639\u0648\u0636\u0643 \u0639\u0646 \u0646\u0641\u0633\u0643', text: '\u0623\u0646\u062A \u0645\u0634 \u0645\u062D\u062A\u0627\u062C \u062D\u062F \u0639\u0634\u0627\u0646 \u062A\u0643\u0645\u0644. \u0623\u0646\u062A \u0643\u0627\u0641\u064A \u0644\u0648\u062D\u062F\u0643.' },
+  { icon: '\uD83C\uDFAF', title: '\u0631\u0643\u0632 \u0639\u0644\u0649 \u0646\u0641\u0633\u0643', text: '\u0627\u0644\u0637\u0627\u0642\u0629 \u0627\u0644\u0644\u064A \u0628\u062A\u0635\u0631\u0641\u0647\u0627 \u0641\u064A \u0627\u0644\u062A\u0641\u0643\u064A\u0631 \u0641\u064A\u0647\u0645\u060C \u0635\u0631\u0641\u0647\u0627 \u0641\u064A \u0646\u0641\u0633\u0643. \u0627\u0644\u0646\u062A\u064A\u062C\u0629 \u0647\u062A\u0643\u0648\u0646 \u0645\u0630\u0647\u0644\u0629.' },
+  { icon: '\uD83C\uDF39', title: '\u0627\u0644\u062D\u0628 \u0627\u0644\u062D\u0642\u064A\u0642\u064A \u062C\u0627\u064A', text: '\u0644\u0645\u0627 \u062A\u062D\u0628 \u0646\u0641\u0633\u0643 \u0627\u0644\u0623\u0648\u0644\u060C \u0627\u0644\u0643\u0648\u0646 \u0647\u064A\u0628\u0639\u062A\u0644\u0643 \u062D\u062F \u064A\u062D\u0628\u0643 \u0632\u064A \u0645\u0627 \u062A\u0633\u062A\u062D\u0642.' }
+];
+var hurtfulReminders = [
+  '\u0627\u0644\u0644\u064A \u0645\u0634 \u0628\u064A\u0642\u062F\u0631 \u0648\u062C\u0648\u062F\u0643\u060C \u0645\u0634 \u0647\u064A\u0641\u064A\u062F\u0643 \u0644\u0645\u0627 \u062A\u0631\u062C\u0639\u0644\u0647',
+  '\u0627\u0644\u062C\u0631\u062D \u0627\u0644\u0644\u064A \u062D\u0635\u0644 \u0645\u0643\u0627\u0646 \u064A\u062A\u0646\u0633\u0649\u060C \u0628\u0633 \u0645\u0645\u0643\u0646 \u064A\u062A\u0639\u0644\u0645 \u0645\u0646\u0647',
+  '\u0631\u062C\u0648\u0639\u0643 \u0645\u0639\u0646\u0627\u0647\u0627 \u0625\u0646\u0643 \u0645\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0627\u0644\u0623\u0630\u0646 \u062A\u0627\u0646\u064A',
+  '\u0645\u0641\u064A\u0634 \u062D\u062F \u0628\u064A\u063A\u064A\u0631\u060C \u0627\u0644\u0644\u064A \u0622\u0630\u0643 \u0645\u0631\u0629 \u0647\u064A\u0623\u0630\u064A\u0643 \u062A\u0627\u0646\u064A',
+  '\u0627\u0644\u0641\u0631\u0627\u0642 \u0643\u0627\u0646 \u0642\u0631\u0627\u0631 \u0635\u062D \u062D\u062A\u0649 \u0644\u0648 \u0643\u0627\u0646 \u0645\u0624\u0644\u0645',
+  '\u0623\u0646\u062A \u0645\u0634 \u062C\u0631\u0628 \u063A\u0644\u0637\u060C \u0623\u0646\u062A \u062C\u0631\u0628 \u0648\u0627\u062A\u0639\u0644\u0645'
+];
+
+function openReminders() { currentView = 'reminders'; aiReminder = ''; showHurtful = false; reminderLoading = false; renderApp(); }
+function renderRemindersView(app) {
+  var html = '<div class="panel">' +
+    '<div class="panel-header" style="background:linear-gradient(to bottom, rgba(127,29,29,0.3), #000)">' +
+      '<button class="back-btn" onclick="goHome()">\u2192</button>' +
+      '<span style="font-size:18px">\uD83D\uDD34</span>' +
+      '<div><h2>\u0627\u0646\u0647\u0627\u0621 \u0627\u0644\u0648\u0642\u062A - \u062A\u0630\u0643\u064A\u0631\u0627\u062A</h2></div>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;">' +
+    '<div class="ai-reminder-card">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+        '<span>\u2728</span><span style="color:#fca5a5;font-size:13px;font-weight:bold;">\u062A\u0630\u0643\u064A\u0631 \u0630\u0643\u064A</span>' +
+      '</div>';
+
+  if (aiReminder) {
+    html += '<p style="color:#e4e4e7;font-size:13px;white-space:pre-wrap;line-height:1.7;">' + escapeHtml(aiReminder) + '</p>' +
+      '<button onclick="aiReminder=\'\';generateAiReminder()" style="margin-top:12px;color:rgba(248,113,113,0.6);background:none;border:none;font-size:12px;cursor:pointer;font-family:inherit;">\u0648\u0644\u0651\u062F \u062A\u0630\u0643\u064A\u0631 \u062C\u062F\u064A\u062F \u2190</button>';
+  } else {
+    html += '<button class="generate-btn" onclick="generateAiReminder()" ' + (reminderLoading ? 'disabled' : '') + ' style="background:rgba(127,29,29,0.3);border-color:rgba(153,27,27,0.3);color:#fca5a5;">' +
+      '\u2728 ' + (reminderLoading ? '\u0628\u0648\u0644\u0651\u062F \u062A\u0630\u0643\u064A\u0631...' : '\u0648\u0644\u0651\u062F \u062A\u0630\u0643\u064A\u0631 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A') +
+    '</button>';
+  }
+  html += '</div>';
+
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+    '<span style="color:#34d399;">\uD83D\uDEE1\uFE0F</span><h3 style="color:#6ee7b7;font-size:13px;font-weight:bold;">\u0623\u0633\u0628\u0627\u0628 \u062A\u0641\u0636\u0644 \u0642\u0648\u064A</h3></div>';
+
+  for (var i = 0; i < reminders.length; i++) {
+    html += '<div class="reminder-card"><div style="display:flex;align-items:start;gap:8px;">' +
+      '<span style="font-size:16px;">' + reminders[i].icon + '</span>' +
+      '<div><div class="reminder-title">' + reminders[i].title + '</div><div class="reminder-text">' + reminders[i].text + '</div></div>' +
+    '</div></div>';
+  }
+
+  html += '<button class="hurtful-btn" onclick="showHurtful=!showHurtful;renderApp()">' +
+    '\u2764\uFE0F \u0627\u0644\u0644\u064A \u0646\u0633\u064A\u062A\u0647 \u26A0\uFE0F <span style="font-size:10px;color:#991b1b;">\u0627\u0636\u063A\u0637 \u0628\u062D\u0630\u0631</span></button>';
+
+  if (showHurtful) {
+    for (var i = 0; i < hurtfulReminders.length; i++) {
+      html += '<div class="hurtful-card"><p>' + hurtfulReminders[i] + '</p></div>';
+    }
+  }
+
+  html += '</div></div>';
+  app.innerHTML = html;
+}
+
+function generateAiReminder() {
+  reminderLoading = true;
+  renderApp();
+  callAI('\u0630\u0643\u0631\u0646\u064A \u0644\u064A\u0647 \u0644\u0627\u0632\u0645 \u0623\u0641\u0636\u0644 \u0642\u0648\u064A \u0648\u0645\u0634 \u0623\u0631\u062C\u0639 \u0644\u0644\u064A \u0622\u0630\u0627\u0646\u064A. \u0627\u0643\u062A\u0628 \u0643\u0644\u0627\u0645 \u0642\u0648\u064A \u0648\u0645\u0624\u062B\u0631 \u0648\u0645\u062E\u062A\u0635\u0631.', 'endtime', []).then(function(response) {
+    aiReminder = response;
+    reminderLoading = false;
+    renderApp();
+  });
+}
+
+// ====== SETTINGS ======
+function openSettings() { currentView = 'settings'; showConfirmClear = false; renderApp(); }
+function renderSettingsView(app) {
+  var settings = getSettings();
+  var html = '<div class="settings-overlay">' +
+    '<div class="settings-card">' +
+      '<div class="settings-header">' +
+        '<div style="display:flex;align-items:center;gap:8px;"><span>\u2699\uFE0F</span><h2>\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A</h2></div>' +
+        '<button class="settings-close" onclick="goHome()">\u2715</button>' +
+      '</div>' +
+      '<div class="settings-body">' +
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+            '<span>\uD83D\uDD0A</span><span style="font-size:13px;color:#d4d4d8;">\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0635\u0648\u062A</span>' +
+          '</div>' +
+          '<input type="range" class="volume-range" min="0" max="1" step="0.01" value="' + settings.volume + '" onchange="setVolume(parseFloat(this.value))">' +
+        '</div>' +
+        '<button class="settings-item" onclick="exportChats()">\uD83D\uDCE5 \u062A\u0635\u062F\u064A\u0631 \u0633\u062C\u0644 \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0627\u062A</button>';
+
+  if (!showConfirmClear) {
+    html += '<button class="settings-item danger" onclick="showConfirmClear=true;renderApp()">\uD83D\uDDD1 \u0645\u0633\u062D \u0643\u0644 \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0627\u062A</button>';
+  } else {
+    html += '<div class="confirm-box"><p>\u0645\u062A\u0623\u0643\u062F\u061F \u062F\u0647 \u0645\u0634 \u0647\u064A\u062A\u0631\u062C\u0639!</p>' +
+      '<div class="confirm-btns">' +
+        '<button class="confirm-yes" onclick="clearChats()">\u0623\u064A\u0647\u060C \u0627\u0645\u0633\u062D</button>' +
+        '<button class="confirm-no" onclick="showConfirmClear=false;renderApp()">\u0644\u0627\u060C \u062E\u0644\u0627\u0635</button>' +
+      '</div></div>';
+  }
+
+  html += '<div class="settings-info">' +
+    '<p>\u0645\u0631\u0651 \u0645\u0646 \u0627\u0644\u0648\u0642\u062A v2.0</p>' +
+    '<p style="margin-top:4px;">\u0623\u0646\u062A \u0623\u0642\u0648\u0649 \u0645\u0645\u0627 \u062A\u062A\u062E\u064A\u0644 \uD83D\uDCAA</p>' +
+  '</div></div></div></div>';
+  app.innerHTML = html;
+}
+
+function exportChats() {
+  var data = JSON.stringify(loadData(KEYS.chats), null, 2);
+  var blob = new Blob([data], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'healing-app-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function clearChats() {
+  localStorage.removeItem(KEYS.chats);
+  showConfirmClear = false;
+  renderApp();
+}
+
+// ====== NAVIGATION ======
+function goHome() {
+  currentView = 'home';
+  if (musicInitialized) { createAmbientSound(null); }
+  renderApp();
+}
+
+// ====== INIT ======
+createRain();
+renderApp();
+
+// Update timer every second
+setInterval(function() {
+  if (currentView === 'home') {
+    var elapsed = calculateElapsed();
+    var boxes = document.querySelectorAll('.timer-value span');
+    if (boxes.length === 6) {
+      boxes[0].textContent = pad2(elapsed.years);
+      boxes[1].textContent = pad2(elapsed.months);
+      boxes[2].textContent = pad2(elapsed.days);
+      boxes[3].textContent = pad2(elapsed.hours);
+      boxes[4].textContent = pad2(elapsed.minutes);
+      boxes[5].textContent = pad2(elapsed.seconds);
+    }
+    var stats = document.querySelectorAll('.stat-value');
+    if (stats.length === 3) {
+      stats[0].textContent = elapsed.totalDays.toLocaleString('ar-EG');
+      stats[1].textContent = elapsed.totalHours.toLocaleString('ar-EG');
+      stats[2].textContent = elapsed.totalMinutes.toLocaleString('ar-EG');
+    }
+  }
+}, 1000);
+
+// Background rotation
+var bgIndex = 1;
+setInterval(function() {
+  bgIndex = (bgIndex % 3) + 1;
+  var bg = document.getElementById('bgImage');
+  if (bg) { bg.style.backgroundImage = 'url(bg' + bgIndex + '.png)'; }
+}, 15000);
+</script>
+</body>
+</html>
