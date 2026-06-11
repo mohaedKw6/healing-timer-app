@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env
+.env.local
+*.db
+*.db-journal
+.zscripts/
+android-sdk/
+jdk-21.0.11+10/
+gradle-8.4/
+timer-app/
+download/
+upload/
+skills/
+*.keystore
